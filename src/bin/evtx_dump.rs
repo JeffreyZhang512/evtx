@@ -168,10 +168,14 @@ impl EvtxDump {
         let mut parser = EvtxParser::from_path(&self.input)
             .with_context(|| format!("Failed to open evtx file at: {}", &self.input.display()))
             .map(|parser| parser.with_configuration(self.parser_settings.clone()))?;
-
+        
+        // Changed by Zhang, Jeffrey
+        let mut records: u64 = 0;
+		writeln!(self.output, "<Events>")?;
         match self.output_format {
             EvtxOutputFormat::XML => {
                 for record in parser.records() {
+                    records = records + 1;
                     self.dump_record(record)?
                 }
             }
@@ -181,7 +185,9 @@ impl EvtxDump {
                 }
             }
         };
-
+		writeln!(self.output, "</Events>")?;
+        println!("Records: {}", records);
+        // Changed by Zhang, Jeffrey
         Ok(())
     }
 
@@ -243,7 +249,17 @@ impl EvtxDump {
                     if self.show_record_number {
                         writeln!(self.output, "Record {}", r.event_record_id)?;
                     }
-                    writeln!(self.output, "{}", r.data)?;
+                    // Changed by Zhang, Jeffrey 
+                    let mut lines = r.data.lines();
+                    // Skip the first line
+                    lines.next();
+                    let mut line= lines.next();
+                    while line != None {
+                        writeln!(self.output, "{}", line.unwrap())?;
+                        line = lines.next();
+                    }
+                    // writeln!(self.output, "{}", r.data)?;
+                    // Changed by Zhang, Jeffrey
                 }
             }
             // This error is non fatal.
